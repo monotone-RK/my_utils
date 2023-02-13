@@ -1,3 +1,3 @@
 #!/bin/bash
 
-for d in `dir -1`; do cd $d; pwd; git pull; cd ..; done
+while read d; do cd "$d" || exit; pwd; git pull; cd ..; echo "--------------------------------------------------"; done < <(dir -1)
