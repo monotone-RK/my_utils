@@ -5,15 +5,20 @@ if [ $# -gt 1 ]; then
     echo "The number of arguments is wrong."
     exit 1
 fi
-if [ $# -eq 0 ]; then
-    echo "Error!"
-    echo "There is no argument."
-    echo "Usage: showbd [a one-column list]"
-    exit 1
-fi
 
 # Initial list
-CURRENT_LIST="$(cat "$1")"
+if [ $# -eq 0 ]; then
+    if [ -p /dev/stdin ]; then
+        CURRENT_LIST="$(cat)"
+    else
+        echo "Error!"
+        echo "There is no argument."
+        echo "Usage: showbd [a one-column list]"
+        exit 1
+    fi
+else
+    CURRENT_LIST="$(cat "$1")"
+fi
 
 TOTAL=$(echo "$CURRENT_LIST" | wc -l)
 BREAKDOWN=$(
