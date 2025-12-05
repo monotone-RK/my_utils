@@ -34,7 +34,7 @@ DATE_COL="${8:-0}"    # 0 の場合は日付を印字しない
 ########################################
 # 領収書共通情報
 ISSUER_NAME="IPSJ ARC/HPC、IEICE CPSY合同研究会"
-ISSUER_ADDR="懇親会担当　大西 隆之、小林 諒平、江川 隆輔、佐藤 雅之　印"
+ISSUER_ADDR="懇親会担当　大西 隆之、小林 諒平、江川 隆輔、佐藤 雅之"
 
 # 金額のデフォルト値（AMOUNT_COL=0 のときや空欄時に使用）
 DEFAULT_AMOUNT=4500
@@ -66,8 +66,31 @@ TEX_FILE="$TMPDIR/receipts.tex"
 # LaTeX プリアンブル（A4 横向き）
 ########################################
 cat > "$TEX_FILE" <<'EOF'
-\documentclass[a4paper]{jsarticle}
+\documentclass[dvipdfmx,a4paper]{jsarticle}
 \usepackage[paper=a4paper,landscape,top=20mm,bottom=20mm,left=25mm,right=25mm]{geometry}
+\usepackage[dvipdfmx]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing}
+\pgfmathsetseed{20241118} % reproducible grain for the digital stamp
+\newcommand{\digiseal}[1][1.10]{%
+  \tikz[baseline=-0.6ex,scale=#1,transform shape]{%
+    \begin{scope}[rotate=-12]
+      % faint ink bleed + grain (digital印影風)
+      \shade[inner color=red!22, outer color=red!4, opacity=0.95] (0,0) circle[radius=8.3mm];
+      \foreach \i in {1,...,110}{
+        \pgfmathsetmacro{\x}{rnd*15-7.5}
+        \pgfmathsetmacro{\y}{rnd*15-7.5}
+        \fill[red!40, opacity=0.32] (\x mm,\y mm) circle[radius=0.12mm];
+      }
+      \draw[red!85, line width=1.1pt,
+            decoration={random steps,segment length=2.0mm,amplitude=0.35mm},
+            decorate] (0,0) circle[radius=8mm];
+      \draw[red!70, line width=0.55pt, opacity=0.65] (0,0) circle[radius=7.15mm];
+      \node[red!85, font=\bfseries\Large, opacity=0.95]  at (0,0) {済};
+      \node[red!60, font=\bfseries\Large, opacity=0.32] at (0.32mm,-0.28mm) {済};
+    \end{scope}
+  }%
+}
 \pagestyle{empty}
 \begin{document}
 EOF
@@ -177,37 +200,37 @@ NR == 1 {
     if (date != "") {
         # No. と日付を 2 カラムで
         printf "\\noindent\\begin{minipage}[t]{0.5\\textwidth}{\\Large No.~%d}\\end{minipage}%%\n", data_row >> out
-        printf "\\begin{minipage}[t]{0.5\\textwidth}\\begin{flushright}{\\Large %s}\\end{flushright}\\end{minipage}\\\\[12mm]\n", date >> out
+        printf "\\begin{minipage}[t]{0.5\\textwidth}\\begin{flushright}{\\Large %s}\\end{flushright}\\end{minipage}\\\\[8mm]\n", date >> out
     } else {
-        printf "\\noindent {\\Large No.~%d}\\\\[12mm]\n", data_row >> out
+        printf "\\noindent {\\Large No.~%d}\\\\[8mm]\n", data_row >> out
     }
 
     # タイトル（中央）
     print "\\begin{center}{\\Huge \\bfseries 領収証}\\end{center}" >> out
-    print "\\vspace*{15mm}" >> out
+    print "\\vspace*{10mm}" >> out
 
     # 所属（左寄せ）
     printf "\\begin{flushleft}{\\LARGE %s}\\end{flushleft}\n", aff >> out
-    print "\\vspace*{12mm}" >> out
+    print "\\vspace*{8mm}" >> out
 
     # 氏名 様（中央）
     printf "\\begin{center}{\\LARGE %s\\ 様}\\end{center}\n", name >> out
-    print "\\vspace*{12mm}" >> out
+    print "\\vspace*{8mm}" >> out
 
     # 金額（中央・下線付き）
     printf "\\begin{center}{\\Huge \\bfseries 金\\ \\underline{\\hspace{10mm}%s\\hspace{10mm}}\\ 円}\\end{center}\n", amount >> out
-    print "\\vspace*{3mm}" >> out
+    print "\\vspace*{2mm}" >> out
     print "\\begin{center}{(消費税込み)}\\end{center}" >> out
 
     # 但し書き
-    printf "\\vspace*{12mm}\n" >> out
-    printf "\\noindent {\\Large 但し、%sとして上記正に領収いたしました。}\\\\[5mm]\n", ptext >> out
+    printf "\\vspace*{8mm}\n" >> out
+    printf "\\noindent {\\Large 但し、%sとして上記正に領収いたしました。}\\\\[3mm]\n", ptext >> out
 
     # 下部 右側に発行者情報
-    print "\\vfill" >> out
+    print "\\vspace*{6mm}" >> out
     print "\\begin{flushright}" >> out
     printf "{\\Large %s}\\\\\n", iname >> out
-    printf "{\\Large %s}\\\\\n", iaddr >> out
+    printf "{\\Large %s\\hspace{6mm}\\digiseal}\\\\\n", iaddr >> out
     print "\\end{flushright}" >> out
 }
 ' "$CSV_FILE"
